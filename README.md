@@ -46,6 +46,40 @@ Alternatively, you can run the project directly with Go:
 go run main.go
 ```
 
+## Routing & Router Setup
+
+The HTTP router is defined in `routes/routes.go` using the Gin framework.
+
+- **Entry function**: `SetupRoutes(dependency *app.Dependency) *gin.Engine`
+  - Creates a Gin engine with `gin.Default()`.
+  - Registers a simple health check route: `GET /ping`.
+  - Creates an image routes group: `router.Group("/api/v1/images")`.
+  - Wires each route in that group to handlers that receive dependencies from `app.Dependency` (for example `dependency.ImageService`).
+
+Inside the image routes group, the following routes are currently defined:
+
+- `POST /api/v1/images/` → `handlers.UploadImageMetadata`
+- `GET /api/v1/images/users/:user_id` → `handlers.ListImages`
+- `GET /api/v1/images/:image_id` → `handlers.GetImageDetails`
+- `PUT /api/v1/images/:image_id` → `handlers.UpdateImageMetadata`
+- `DELETE /api/v1/images/:image_id` → `handlers.DeleteImage`
+
+To **add a new route**, you typically:
+
+1. Implement the handler in `handlers/` (for example in `handlers/image_handler.go`).
+2. Inject any required services via `app.Dependency` in `app/app.go`.
+3. Register the new route in `routes/routes.go` inside `SetupRoutes`, either:
+   - As a new method on the existing `/api/v1/images` group, or
+   - As a new group if it belongs to a different resource (e.g. `/api/v1/users`).
+
+Example of adding a new route in `routes/routes.go`:
+
+```go
+imageGroup.GET("/:image_id/analysis", handlers.GetImageAnalysis(dependency.ImageService))
+```
+
+This structure keeps **routing**, **handlers**, and **dependency wiring** separated and makes it easy to extend the API.
+
 ## API Endpoints
 Here are the available API endpoints for the Batman project:
 These endpoints allow you to manage image metadata and files, ensuring a comprehensive image upload and analysis platform.
